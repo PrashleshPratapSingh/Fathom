@@ -168,7 +168,7 @@ async def _upsert_span(span_data: SpanCreate, db: AsyncSession) -> TraceSpan:
             "error_message": stmt.excluded.error_message,
             "latency_ms": stmt.excluded.latency_ms,
             "token_count": stmt.excluded.token_count,
-            "metadata_": stmt.excluded.metadata_,
+            "metadata": stmt.excluded.metadata,
         },
     )
 
