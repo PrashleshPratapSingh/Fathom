@@ -12,10 +12,10 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.database import Base, engine
-from app.routers.ingest import eval_router, router as ingest_router
+from app.routers.evaluations import router as eval_router
+from app.routers.ingest import router as ingest_router
 from app.routers.graph import router as graph_router
 from app.routers.rewind import router as rewind_router
-from app.routers.evaluate import router as evaluate_router
 
 settings = get_settings()
 
@@ -67,7 +67,6 @@ app.include_router(ingest_router)
 app.include_router(eval_router)
 app.include_router(graph_router)
 app.include_router(rewind_router)
-app.include_router(evaluate_router)
 
 
 @app.get("/", tags=["Health"])
