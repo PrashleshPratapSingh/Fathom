@@ -1,26 +1,7 @@
-// Node Inspector — Clean Modern Drawer with Simple Mode (AI Solver) & Dev Mode (Full Telemetry)
-// Zero Emojis — Clean UI
+// Node Inspector — Minimalist, Enterprise Drawer (Zero Emojis, Zero Decorative Icons)
 
 import { useState, useEffect } from 'react';
-import {
-  X,
-  Copy,
-  Check,
-  RotateCcw,
-  Sparkles,
-  Wrench,
-  Database,
-  Cpu,
-  GitBranch,
-  Clock,
-  Coins,
-  ShieldCheck,
-  AlertTriangle,
-  Bot,
-  Zap,
-  ArrowRight,
-  CheckCircle2,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import type { SpanResponse, ViewMode, EvaluationResponse, DiagnosisResponse } from '../types/api';
 import { KIND_LABELS } from '../types/api';
 import { estimateCost, formatCost } from '../utils/costEstimator';
@@ -46,10 +27,10 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-      title="Copy to clipboard"
+      className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
+      title="Copy"
     >
-      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? 'Copied' : 'Copy'}
     </button>
   );
 }
@@ -66,7 +47,7 @@ function EvalCard({ evaluation, mode }: { evaluation: EvaluationResponse; mode: 
 
   return (
     <div
-      className={`p-3 rounded-lg border text-left ${
+      className={`p-3 rounded border text-left font-mono text-xs ${
         isFail
           ? 'bg-rose-950/20 border-rose-800/40 text-rose-200'
           : isWarn
@@ -74,11 +55,8 @@ function EvalCard({ evaluation, mode }: { evaluation: EvaluationResponse; mode: 
           : 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
       }`}
     >
-      <div className="flex items-center justify-between mb-1.5 text-xs font-mono">
-        <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 opacity-80" />
-          <span className="font-semibold">{phaseLabels[evaluation.phase] || evaluation.phase}</span>
-        </div>
+      <div className="flex items-center justify-between mb-1.5 text-xs">
+        <span className="font-semibold">{phaseLabels[evaluation.phase] || evaluation.phase}</span>
         <span
           className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
             isFail
@@ -122,7 +100,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
 
   if (!span) return null;
 
-  const kindLabel = KIND_LABELS[span.kind] || span.kind;
+  const kindLabel = (KIND_LABELS[span.kind] || span.kind).toUpperCase();
   const isFailed = span.status === 'failed';
   const isWarning = span.evaluations.some((e) => e.verdict === 'warning');
   const canRewind = span.status === 'failed' || span.status === 'completed';
@@ -169,48 +147,33 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
     setShowEditForm(true);
   };
 
-  const KindIcon =
-    span.kind === 'llm_call'
-      ? Sparkles
-      : span.kind === 'tool_call'
-      ? Wrench
-      : span.kind === 'retrieval'
-      ? Database
-      : span.kind === 'agent_decision'
-      ? GitBranch
-      : Cpu;
-
   return (
-    <div className="w-[430px] bg-slate-950/95 backdrop-blur-xl border-l border-slate-800/90 flex flex-col h-full overflow-hidden shrink-0 z-30 shadow-2xl animate-fade">
+    <div className="w-[420px] bg-slate-950 border-l border-slate-800 flex flex-col h-full overflow-hidden shrink-0 z-30 shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/50">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-violet-400">
-            <KindIcon className="w-4 h-4" />
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-900/60 font-mono">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
+              [{kindLabel}]
+            </span>
+            <span
+              className={`text-[10px] uppercase font-semibold ${
+                span.status === 'failed'
+                  ? 'text-rose-400'
+                  : span.status === 'rewound'
+                  ? 'text-purple-400'
+                  : 'text-emerald-400'
+              }`}
+            >
+              {span.status}
+            </span>
           </div>
-          <div className="min-w-0">
-            <h2 className="text-xs font-mono font-bold text-white uppercase truncate">{span.name}</h2>
-            <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-slate-400">
-              <span className="uppercase text-violet-400">[{kindLabel}]</span>
-              <span>-</span>
-              <span
-                className={`font-semibold uppercase ${
-                  span.status === 'failed'
-                    ? 'text-rose-400'
-                    : span.status === 'rewound'
-                    ? 'text-purple-400'
-                    : 'text-emerald-400'
-                }`}
-              >
-                {span.status}
-              </span>
-            </div>
-          </div>
+          <h2 className="text-xs font-bold text-white truncate">{span.name}</h2>
         </div>
 
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           title="Close details"
         >
           <X className="w-4 h-4" />
@@ -227,74 +190,60 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
           <div className="space-y-4">
             {/* Simple Status Banner */}
             {isFailed ? (
-              <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 space-y-2">
-                <div className="flex items-center gap-2 text-rose-300 font-semibold text-xs">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  <span>This step failed during agent execution</span>
+              <div className="p-3.5 rounded bg-rose-950/40 border border-rose-800/60 text-rose-200 space-y-1.5">
+                <div className="text-xs font-mono font-semibold text-rose-300 uppercase tracking-wide">
+                  Step Failed
                 </div>
                 {span.error_message && (
-                  <p className="text-xs text-rose-200/90 leading-relaxed font-sans bg-rose-950/60 p-2.5 rounded-lg border border-rose-900/60">
+                  <p className="text-xs text-rose-200/90 leading-relaxed font-sans bg-rose-950/60 p-2.5 rounded border border-rose-900/60">
                     {span.error_message.split('\n').pop()}
                   </p>
                 )}
               </div>
             ) : isWarning ? (
-              <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-800/50 text-amber-200 flex items-center gap-2 text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Step succeeded but triggered quality or drift warnings.</span>
+              <div className="p-3 rounded bg-amber-950/30 border border-amber-800/50 text-amber-200 text-xs font-sans">
+                Notice: Step finished with quality or drift warnings.
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-800/40 text-emerald-200 flex items-center gap-2 text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Step executed successfully with no errors.</span>
+              <div className="p-3 rounded bg-emerald-950/20 border border-emerald-800/40 text-emerald-200 text-xs font-sans">
+                Step completed successfully.
               </div>
             )}
 
             {/* AI Solver Card (Clean Simple Mode) */}
             {(isFailed || isWarning || canRewind) && (
-              <div className="p-4 rounded-xl bg-gradient-to-b from-violet-950/40 to-slate-900/60 border border-violet-800/50 space-y-3 shadow-lg">
+              <div className="p-4 rounded bg-slate-900 border border-violet-800/50 space-y-3 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-violet-400" />
-                    <span className="text-xs font-semibold text-violet-200">Solve with AI</span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-800/60">
+                  <span className="text-xs font-mono font-bold text-violet-300 uppercase tracking-wider">
+                    AI Diagnostic & Auto-Fix
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800/60">
                     Groq
                   </span>
                 </div>
 
                 {!diagnosis && !diagnosing && (
                   <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                    Let AI analyze what caused this step to fail and automatically generate a working fix.
+                    Ask AI to analyze this step, determine why it failed, and generate a working fix.
                   </p>
                 )}
 
                 <button
                   onClick={handleDiagnose}
                   disabled={diagnosing || rewinding}
-                  className="w-full py-2 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-medium flex items-center justify-center gap-2 transition-all shadow-md shadow-violet-600/20"
+                  className="w-full py-2 px-3 rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-mono font-medium transition-all"
                 >
-                  {diagnosing ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Diagnosing with Groq AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5 text-amber-300" />
-                      <span>{diagnosis ? 'Re-run Diagnosis' : 'Analyze & Solve with AI'}</span>
-                    </>
-                  )}
+                  {diagnosing ? 'Analyzing with Groq AI...' : diagnosis ? 'Re-run Diagnosis' : 'Analyze & Solve with AI'}
                 </button>
 
                 {diagnosisError && (
-                  <div className="p-2.5 rounded-lg bg-rose-950/50 border border-rose-800/60 text-xs text-rose-300">
-                    Diagnosis notice: {diagnosisError}
+                  <div className="p-2.5 rounded bg-rose-950/50 border border-rose-800/60 text-xs text-rose-300 font-mono">
+                    Notice: {diagnosisError}
                   </div>
                 )}
 
                 {diagnosis && (
-                  <div className="space-y-3 pt-2 border-t border-violet-900/40 text-xs animate-fade">
+                  <div className="space-y-3 pt-2 border-t border-slate-800 text-xs animate-fade">
                     <div>
                       <span className="text-[10px] uppercase font-mono text-violet-400 font-semibold block mb-0.5">
                         What Happened:
@@ -306,7 +255,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
                       <span className="text-[10px] uppercase font-mono text-emerald-400 font-semibold block mb-0.5">
                         Recommended Solution:
                       </span>
-                      <p className="text-slate-300 leading-relaxed font-sans bg-slate-950/80 p-2.5 rounded-lg border border-slate-800">
+                      <p className="text-slate-300 leading-relaxed font-sans bg-slate-950 p-2.5 rounded border border-slate-800">
                         {diagnosis.suggested_fix}
                       </p>
                     </div>
@@ -314,20 +263,9 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
                     <button
                       onClick={handleDirectAIFixAndRerun}
                       disabled={rewinding}
-                      className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
+                      className="w-full py-2.5 px-4 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-mono font-semibold transition-all shadow"
                     >
-                      {rewinding ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Applying Fix & Re-executing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <RotateCcw className="w-3.5 h-3.5 text-white" />
-                          <span>Apply AI Fix & Re-run Step</span>
-                          <ArrowRight className="w-3.5 h-3.5 text-emerald-200 ml-1" />
-                        </>
-                      )}
+                      {rewinding ? 'Applying Fix & Re-executing...' : 'Apply AI Fix & Re-run Step'}
                     </button>
                   </div>
                 )}
@@ -335,12 +273,12 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
             )}
 
             {/* Simple Step Context */}
-            <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 space-y-2">
-              <span className="text-[10px] uppercase font-mono text-slate-400 font-semibold block">
-                Step Purpose
+            <div className="p-3.5 rounded bg-slate-900/50 border border-slate-800 space-y-1.5 font-mono">
+              <span className="text-[10px] uppercase text-slate-400 font-semibold block">
+                Operation Name
               </span>
-              <p className="text-xs text-slate-200 leading-relaxed font-sans">
-                {span.name.replace(/_/g, ' ')}
+              <p className="text-xs text-slate-200">
+                {span.name}
               </p>
             </div>
           </div>
@@ -348,78 +286,56 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
           /* ────────────────────────────────────────── */
           /* DEV MODE (Advanced Engineering Telemetry)   */
           /* ────────────────────────────────────────── */
-          <div className="space-y-4">
+          <div className="space-y-4 font-mono">
             {/* Telemetry Stats Grid */}
-            <div className="grid grid-cols-4 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+            <div className="grid grid-cols-4 gap-2 bg-slate-900 p-2.5 rounded border border-slate-800">
               <div className="text-center">
-                <div className="text-xs font-mono font-bold text-slate-200">
+                <div className="text-xs font-bold text-slate-200">
                   {span.latency_ms < 1000 ? `${span.latency_ms.toFixed(0)}ms` : `${(span.latency_ms / 1000).toFixed(2)}s`}
                 </div>
-                <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
-                  <Clock className="w-2.5 h-2.5" /> Time
-                </div>
+                <div className="text-[9px] text-slate-500 uppercase mt-0.5">Latency</div>
               </div>
 
               <div className="text-center">
-                <div className="text-xs font-mono font-bold text-slate-200">{span.token_count.toLocaleString()}</div>
-                <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
-                  <Cpu className="w-2.5 h-2.5" /> Tokens
-                </div>
+                <div className="text-xs font-bold text-slate-200">{span.token_count.toLocaleString()}</div>
+                <div className="text-[9px] text-slate-500 uppercase mt-0.5">Tokens</div>
               </div>
 
               <div className="text-center">
-                <div className="text-xs font-mono font-bold text-emerald-400">{formatCost(estimatedCost)}</div>
-                <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
-                  <Coins className="w-2.5 h-2.5" /> Cost
-                </div>
+                <div className="text-xs font-bold text-emerald-400">{formatCost(estimatedCost)}</div>
+                <div className="text-[9px] text-slate-500 uppercase mt-0.5">Cost</div>
               </div>
 
               <div className="text-center truncate">
-                <div className="text-xs font-mono font-bold text-slate-200 truncate" title={span.model_name || 'N/A'}>
+                <div className="text-xs font-bold text-slate-200 truncate" title={span.model_name || 'N/A'}>
                   {span.model_name ? span.model_name.replace('gpt-', '').replace('claude-', '') : '—'}
                 </div>
-                <div className="text-[9px] font-mono text-slate-500 uppercase mt-0.5">Model</div>
+                <div className="text-[9px] text-slate-500 uppercase mt-0.5">Model</div>
               </div>
             </div>
 
             {/* AI Copilot Diagnosis Card (Dev Mode) */}
-            <div className="p-3.5 rounded-xl bg-gradient-to-b from-violet-950/30 to-slate-900/50 border border-violet-800/40 space-y-2.5">
+            <div className="p-3.5 rounded bg-slate-900 border border-violet-800/40 space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-violet-400" />
-                  <span className="text-xs font-mono font-bold text-violet-200">Fathom AI Copilot</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-violet-950/80 text-violet-300 border border-violet-800/60">
-                    Groq
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-violet-300 uppercase">Fathom AI Copilot</span>
                 <button
                   onClick={handleDiagnose}
                   disabled={diagnosing}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-mono text-[11px] font-semibold transition-all shadow-md shadow-violet-600/20"
+                  className="px-2.5 py-1 rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[11px] font-semibold transition-all"
                 >
-                  {diagnosing ? (
-                    <>
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3 h-3 text-amber-300" />
-                      <span>Diagnose Root Cause</span>
-                    </>
-                  )}
+                  {diagnosing ? 'Analyzing...' : 'Diagnose Root Cause'}
                 </button>
               </div>
 
               {diagnosisError && (
-                <div className="p-2 rounded bg-rose-950/40 border border-rose-800/60 text-[11px] font-mono text-rose-300">
+                <div className="p-2 rounded bg-rose-950/40 border border-rose-800/60 text-[11px] text-rose-300">
                   Notice: {diagnosisError}
                 </div>
               )}
 
               {diagnosis && (
-                <div className="space-y-2.5 pt-1 text-xs font-mono animate-fade">
-                  <div className="text-[10px] text-slate-400 flex items-center justify-between border-b border-violet-900/40 pb-1">
+                <div className="space-y-2.5 pt-1 text-xs animate-fade">
+                  <div className="text-[10px] text-slate-400 flex items-center justify-between border-b border-slate-800 pb-1">
                     <span>Model: {diagnosis.model_used}</span>
                     <span className="text-emerald-400 font-semibold">Diagnosis Ready</span>
                   </div>
@@ -435,7 +351,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
                     <span className="text-[10px] uppercase text-amber-400 font-semibold block mb-0.5">
                       Root Cause:
                     </span>
-                    <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/80 p-2 rounded border border-slate-800">
+                    <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950 p-2 rounded border border-slate-800">
                       {diagnosis.root_cause}
                     </p>
                   </div>
@@ -444,7 +360,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
                     <span className="text-[10px] uppercase text-emerald-400 font-semibold block mb-0.5">
                       Actionable Fix:
                     </span>
-                    <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/80 p-2 rounded border border-slate-800">
+                    <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950 p-2 rounded border border-slate-800">
                       {diagnosis.suggested_fix}
                     </p>
                   </div>
@@ -452,10 +368,9 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
                   {canRewind && (
                     <button
                       onClick={handleApplyAIFixToDevEditor}
-                      className="w-full py-1.5 px-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                      className="w-full py-1.5 px-3 rounded bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 text-xs font-medium transition-all"
                     >
-                      <Zap className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Auto-Populate Repaired Input in Rewind</span>
+                      Auto-Populate Repaired Input in Rewind
                     </button>
                   )}
                 </div>
@@ -464,15 +379,12 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
 
             {/* Error message callout (Dev Mode) */}
             {span.error_message && (
-              <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800/60 text-rose-200">
+              <div className="p-3 rounded bg-rose-950/30 border border-rose-800/60 text-rose-200">
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-rose-300">
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
-                    <span>Execution Stacktrace</span>
-                  </div>
+                  <span className="text-xs font-bold text-rose-300 uppercase">Execution Stacktrace</span>
                   <CopyButton text={span.error_message} />
                 </div>
-                <pre className="text-[11px] font-mono text-rose-200/90 whitespace-pre-wrap bg-rose-950/60 p-2.5 rounded-lg border border-rose-900/60 max-h-32 overflow-y-auto">
+                <pre className="text-[11px] text-rose-200/90 whitespace-pre-wrap bg-rose-950/60 p-2 rounded border border-rose-900/60 max-h-32 overflow-y-auto">
                   {span.error_message}
                 </pre>
               </div>
@@ -480,22 +392,22 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
 
             {/* Input Data */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+              <div className="flex items-center justify-between text-xs text-slate-400">
                 <span className="uppercase tracking-wider font-semibold">Payload Input</span>
                 <CopyButton text={JSON.stringify(span.input_data, null, 2)} />
               </div>
-              <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-40 overflow-y-auto">
+              <pre className="text-[11px] text-slate-300 bg-slate-900 border border-slate-800 p-2.5 rounded overflow-x-auto max-h-40 overflow-y-auto">
                 {JSON.stringify(span.input_data, null, 2)}
               </pre>
             </div>
 
             {/* Output Data */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+              <div className="flex items-center justify-between text-xs text-slate-400">
                 <span className="uppercase tracking-wider font-semibold">Payload Output</span>
                 <CopyButton text={JSON.stringify(span.output_data, null, 2)} />
               </div>
-              <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-40 overflow-y-auto">
+              <pre className="text-[11px] text-slate-300 bg-slate-900 border border-slate-800 p-2.5 rounded overflow-x-auto max-h-40 overflow-y-auto">
                 {Object.keys(span.output_data).length > 0
                   ? JSON.stringify(span.output_data, null, 2)
                   : '(No output returned)'}
@@ -505,8 +417,8 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
             {/* Evaluations */}
             {span.evaluations && span.evaluations.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                  <span className="uppercase tracking-wider font-semibold">Quality & Safety Evaluations</span>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span className="uppercase tracking-wider font-semibold">Evaluations</span>
                   <span className="text-[10px] text-slate-500">{span.evaluations.length} checks</span>
                 </div>
                 <div className="space-y-2">
@@ -519,36 +431,33 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
 
             {/* Rewind & Mutate Action Section (Dev Mode) */}
             {canRewind && (
-              <div className="pt-2 border-t border-slate-800/80">
+              <div className="pt-2 border-t border-slate-800">
                 {!showEditForm ? (
                   <button
                     onClick={handleOpenEdit}
-                    className="w-full py-2.5 px-4 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/50 hover:border-violet-500 text-xs font-mono text-violet-200 transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full py-2 px-3 rounded bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/50 hover:border-violet-500 text-xs text-violet-200 transition-all"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-violet-400" />
-                    <span>Mutate Input & Re-execute from this Span</span>
+                    Mutate Input & Re-execute
                   </button>
                 ) : (
-                  <div className="space-y-2.5 bg-slate-900/80 p-3.5 rounded-xl border border-violet-800/60 animate-fade">
-                    <div className="flex items-center justify-between text-xs font-mono text-violet-300">
-                      <span>Edit Input JSON:</span>
-                    </div>
+                  <div className="space-y-2.5 bg-slate-900 p-3 rounded border border-violet-800/60 animate-fade">
+                    <span className="text-xs text-violet-300">Edit Input JSON:</span>
                     <textarea
                       value={editInput}
                       onChange={(e) => setEditInput(e.target.value)}
-                      className="w-full h-36 bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2.5 text-xs font-mono focus:outline-none focus:border-violet-500 resize-none"
+                      className="w-full h-32 bg-slate-950 border border-slate-700 text-slate-200 rounded p-2 text-xs focus:outline-none focus:border-violet-500 resize-none"
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={handleRewind}
                         disabled={rewinding}
-                        className="flex-1 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-mono text-xs font-semibold shadow-lg transition-all"
+                        className="flex-1 py-1.5 rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-semibold transition-all"
                       >
-                        {rewinding ? 'Rewinding & Executing...' : 'Execute Rewind'}
+                        {rewinding ? 'Rewinding...' : 'Execute Rewind'}
                       </button>
                       <button
                         onClick={() => setShowEditForm(false)}
-                        className="px-3.5 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-400 hover:text-white bg-slate-900 font-mono text-xs transition-all"
+                        className="px-3 py-1.5 rounded border border-slate-700 text-slate-400 hover:text-white bg-slate-900 text-xs transition-all"
                       >
                         Cancel
                       </button>
