@@ -1,8 +1,25 @@
-// Node Inspector — Monochrome minimal side panel
+// Node Inspector — Modern telemetry inspection drawer with evaluation breakdowns and rewind controls
 
 import { useState } from 'react';
+import {
+  X,
+  Copy,
+  Check,
+  RotateCcw,
+  Sparkles,
+  Wrench,
+  Database,
+  Cpu,
+  GitBranch,
+  Clock,
+  Coins,
+  ShieldCheck,
+  AlertTriangle,
+  Flame,
+} from 'lucide-react';
 import type { SpanResponse, ViewMode, EvaluationResponse } from '../types/api';
 import { KIND_LABELS } from '../types/api';
+import { estimateCost, formatCost } from '../utils/costEstimator';
 
 interface NodeInspectorProps {
   span: SpanResponse | null;
@@ -12,28 +29,70 @@ interface NodeInspectorProps {
   rewinding: boolean;
 }
 
-function EvalCard({ evaluation, mode }: { evaluation: EvaluationResponse; mode: ViewMode }) {
-  const phaseLabels: Record<string, string> = {
-    tool_check: 'tool check',
-    semantic_drift: 'drift check',
-    judge_llm: 'assessment',
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   return (
-    <div className="p-3 border border-[#222222] bg-black">
-      <div className="flex items-center justify-between mb-1 text-[10px] font-mono">
-        <span className="text-neutral-500">{phaseLabels[evaluation.phase] || evaluation.phase}</span>
-        <span className={evaluation.verdict === 'failure' ? 'text-white underline font-bold' : 'text-neutral-400'}>
-          [{evaluation.verdict.toUpperCase()}]
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+      title="Copy to clipboard"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
+
+function EvalCard({ evaluation, mode }: { evaluation: EvaluationResponse; mode: ViewMode }) {
+  const phaseLabels: Record<string, string> = {
+    tool_check: 'Tool Validation Check',
+    semantic_drift: 'Semantic Drift Analysis',
+    judge_llm: 'LLM Quality Assessment',
+  };
+
+  const isFail = evaluation.verdict === 'failure';
+  const isWarn = evaluation.verdict === 'warning';
+
+  return (
+    <div
+      className={`p-3 rounded-lg border text-left ${
+        isFail
+          ? 'bg-rose-950/20 border-rose-800/40 text-rose-200'
+          : isWarn
+          ? 'bg-amber-950/20 border-amber-800/40 text-amber-200'
+          : 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1.5 text-xs font-mono">
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 opacity-80" />
+          <span className="font-semibold">{phaseLabels[evaluation.phase] || evaluation.phase}</span>
+        </div>
+        <span
+          className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+            isFail
+              ? 'bg-rose-900/60 text-rose-300'
+              : isWarn
+              ? 'bg-amber-900/60 text-amber-300'
+              : 'bg-emerald-900/60 text-emerald-300'
+          }`}
+        >
+          {evaluation.verdict}
         </span>
       </div>
 
       {mode === 'non-developer' && evaluation.summary && (
-        <p className="text-[11px] font-mono text-neutral-300 leading-relaxed">{evaluation.summary}</p>
+        <p className="text-xs text-slate-300 leading-relaxed font-sans">{evaluation.summary}</p>
       )}
 
       {mode === 'developer' && (
-        <pre className="text-[10px] font-mono text-neutral-500 bg-black overflow-x-auto max-h-24 overflow-y-auto">
+        <pre className="text-[11px] font-mono text-slate-300 bg-slate-950/70 p-2 rounded border border-slate-800 overflow-x-auto max-h-32 overflow-y-auto mt-1">
           {JSON.stringify(evaluation.details, null, 2)}
         </pre>
       )}
@@ -49,6 +108,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
 
   const kindLabel = KIND_LABELS[span.kind] || span.kind;
   const canRewind = span.status === 'failed' || span.status === 'completed';
+  const estimatedCost = estimateCost(span.model_name, span.token_count);
 
   const handleRewind = () => {
     try {
@@ -57,7 +117,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
       setShowEditForm(false);
       setEditInput('');
     } catch {
-      alert('Invalid JSON.');
+      alert('Invalid JSON input format.');
     }
   };
 
@@ -66,107 +126,140 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
     setShowEditForm(true);
   };
 
+  const KindIcon =
+    span.kind === 'llm_call'
+      ? Sparkles
+      : span.kind === 'tool_call'
+      ? Wrench
+      : span.kind === 'retrieval'
+      ? Database
+      : span.kind === 'agent_decision'
+      ? GitBranch
+      : Cpu;
+
   return (
-    <div className="w-[360px] bg-black border-l border-[#222222] flex flex-col h-full overflow-hidden shrink-0 animate-fade">
+    <div className="w-[420px] bg-slate-950/95 backdrop-blur-xl border-l border-slate-800/90 flex flex-col h-full overflow-hidden shrink-0 z-30 shadow-2xl animate-fade">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#222222]">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xs font-mono font-bold text-white uppercase truncate">{span.name}</h2>
-          <div className="flex items-center gap-2 mt-0.5 text-[9px] font-mono text-neutral-500">
-            <span>[{kindLabel}]</span>
-            <span>•</span>
-            <span className={span.status === 'failed' ? 'text-white underline' : 'text-neutral-400'}>
-              {span.status.toUpperCase()}
-            </span>
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/50">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-violet-400">
+            <KindIcon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xs font-mono font-bold text-white uppercase truncate">{span.name}</h2>
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-slate-400">
+              <span className="uppercase text-violet-400">[{kindLabel}]</span>
+              <span>•</span>
+              <span
+                className={`font-semibold uppercase ${
+                  span.status === 'failed'
+                    ? 'text-rose-400'
+                    : span.status === 'rewound'
+                    ? 'text-purple-400'
+                    : 'text-emerald-400'
+                }`}
+              >
+                {span.status}
+              </span>
+            </div>
           </div>
         </div>
+
         <button
           onClick={onClose}
-          className="text-neutral-500 hover:text-white font-mono text-xs"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          title="Close details"
         >
-          [CLOSE]
+          <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-        {/* Stats grid (dev mode) */}
-        {mode === 'developer' && (
-          <div className="grid grid-cols-3 gap-2 border-b border-[#222222] pb-4">
-            {[
-              { label: 'time', value: `${span.latency_ms.toFixed(0)}ms` },
-              { label: 'tokens', value: span.token_count.toString() },
-              { label: 'model', value: span.model_name || '—' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-xs font-mono font-bold text-white">{stat.value}</div>
-                <div className="text-[8px] font-mono text-neutral-500 uppercase mt-0.5">{stat.label}</div>
-              </div>
-            ))}
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Telemetry Stats Grid */}
+        <div className="grid grid-cols-4 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-slate-200">
+              {span.latency_ms < 1000 ? `${span.latency_ms.toFixed(0)}ms` : `${(span.latency_ms / 1000).toFixed(2)}s`}
+            </div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
+              <Clock className="w-2.5 h-2.5" /> Time
+            </div>
           </div>
-        )}
 
-        {/* Status card (non-dev) */}
-        {mode === 'non-developer' && (
-          <div className="border border-[#222222] p-3 text-[11px] font-mono">
-            {span.status === 'failed' ? (
-              <div className="text-white">
-                <span className="font-bold">[ERR]</span> This step failed.
-                {span.error_message && (
-                  <p className="text-neutral-500 mt-1 line-clamp-2">{span.error_message.split('\n').pop()}</p>
-                )}
-              </div>
-            ) : span.status === 'rewound' ? (
-              <div className="text-neutral-400">
-                <span>[RW]</span> Rewound with modified input
-              </div>
-            ) : (
-              <div className="text-neutral-400">
-                <span>[OK]</span> Completed successfully
-              </div>
-            )}
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-slate-200">{span.token_count.toLocaleString()}</div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
+              <Cpu className="w-2.5 h-2.5" /> Tokens
+            </div>
           </div>
-        )}
 
-        {/* Error (dev mode) */}
-        {span.error_message && mode === 'developer' && (
-          <div>
-            <h3 className="text-[9px] font-mono text-neutral-500 mb-1 uppercase tracking-wider">Error Details</h3>
-            <pre className="text-[10px] font-mono text-white bg-black border border-[#222222] p-2.5 overflow-x-auto max-h-32 overflow-y-auto whitespace-pre-wrap">
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-emerald-400">{formatCost(estimatedCost)}</div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase flex items-center justify-center gap-1 mt-0.5">
+              <Coins className="w-2.5 h-2.5" /> Cost
+            </div>
+          </div>
+
+          <div className="text-center truncate">
+            <div className="text-xs font-mono font-bold text-slate-200 truncate" title={span.model_name || 'N/A'}>
+              {span.model_name ? span.model_name.replace('gpt-', '').replace('claude-', '') : '—'}
+            </div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase mt-0.5">Model</div>
+          </div>
+        </div>
+
+        {/* Error message callout */}
+        {span.error_message && (
+          <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800/60 text-rose-200">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-rose-300">
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+                <span>Execution Error</span>
+              </div>
+              <CopyButton text={span.error_message} />
+            </div>
+            <pre className="text-[11px] font-mono text-rose-200/90 whitespace-pre-wrap bg-rose-950/60 p-2.5 rounded-lg border border-rose-900/60 max-h-36 overflow-y-auto">
               {span.error_message}
             </pre>
           </div>
         )}
 
-        {/* Input */}
-        <div>
-          <h3 className="text-[9px] font-mono text-neutral-500 mb-1 uppercase tracking-wider">
-            {mode === 'developer' ? 'Input JSON' : 'Input Context'}
-          </h3>
-          <pre className="text-[10px] font-mono text-neutral-400 bg-black border border-[#222222] p-2.5 overflow-x-auto max-h-36 overflow-y-auto">
+        {/* Input Data */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span className="uppercase tracking-wider font-semibold">
+              {mode === 'developer' ? 'Payload Input' : 'Input Context'}
+            </span>
+            <CopyButton text={JSON.stringify(span.input_data, null, 2)} />
+          </div>
+          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-44 overflow-y-auto">
             {JSON.stringify(span.input_data, null, 2)}
           </pre>
         </div>
 
-        {/* Output */}
-        <div>
-          <h3 className="text-[9px] font-mono text-neutral-500 mb-1 uppercase tracking-wider">
-            {mode === 'developer' ? 'Output JSON' : 'Output Result'}
-          </h3>
-          <pre className="text-[10px] font-mono text-neutral-400 bg-black border border-[#222222] p-2.5 overflow-x-auto max-h-36 overflow-y-auto">
+        {/* Output Data */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span className="uppercase tracking-wider font-semibold">
+              {mode === 'developer' ? 'Payload Output' : 'Output Result'}
+            </span>
+            <CopyButton text={JSON.stringify(span.output_data, null, 2)} />
+          </div>
+          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-48 overflow-y-auto">
             {Object.keys(span.output_data).length > 0
               ? JSON.stringify(span.output_data, null, 2)
-              : '(no output data)'}
+              : '(No output returned)'}
           </pre>
         </div>
 
         {/* Evaluations */}
-        {span.evaluations.length > 0 && (
-          <div>
-            <h3 className="text-[9px] font-mono text-neutral-500 mb-1.5 uppercase tracking-wider">
-              {mode === 'developer' ? 'System Evaluations' : 'Analysis'}
-            </h3>
+        {span.evaluations && span.evaluations.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span className="uppercase tracking-wider font-semibold">Quality & Safety Evaluations</span>
+              <span className="text-[10px] text-slate-500">{span.evaluations.length} checks</span>
+            </div>
             <div className="space-y-2">
               {span.evaluations.map((ev) => (
                 <EvalCard key={ev.id} evaluation={ev} mode={mode} />
@@ -175,36 +268,40 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
           </div>
         )}
 
-        {/* Rewind */}
+        {/* Rewind & Mutate Action Section */}
         {canRewind && (
-          <div className="border-t border-[#222222] pt-4">
+          <div className="pt-2 border-t border-slate-800/80">
             {!showEditForm ? (
               <button
                 onClick={handleOpenEdit}
-                className="w-full py-2 border border-[#222222] hover:border-white text-xs font-mono text-white bg-black transition-all"
+                className="w-full py-2.5 px-4 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/50 hover:border-violet-500 text-xs font-mono text-violet-200 transition-all flex items-center justify-center gap-2 shadow-lg"
               >
-                [MUTATE INPUT & RE-RUN]
+                <RotateCcw className="w-3.5 h-3.5 text-violet-400" />
+                <span>Mutate Input & Re-execute from this Span</span>
               </button>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5 bg-slate-900/80 p-3.5 rounded-xl border border-violet-800/60 animate-fade">
+                <div className="flex items-center justify-between text-xs font-mono text-violet-300">
+                  <span>Edit Input JSON:</span>
+                </div>
                 <textarea
                   value={editInput}
                   onChange={(e) => setEditInput(e.target.value)}
-                  className="w-full h-32 bg-black border border-[#222222] text-white rounded p-2 text-[10px] font-mono focus:outline-none focus:border-white resize-none"
+                  className="w-full h-36 bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2.5 text-xs font-mono focus:outline-none focus:border-violet-500 resize-none"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={handleRewind}
                     disabled={rewinding}
-                    className="flex-1 py-1.5 border border-white text-black bg-white font-mono text-xs hover:bg-neutral-200 transition-all"
+                    className="flex-1 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-mono text-xs font-semibold shadow-lg transition-all"
                   >
-                    {rewinding ? '[REWINDING...]' : '[EXECUTE REWIND]'}
+                    {rewinding ? 'Rewinding & Executing...' : 'Execute Rewind'}
                   </button>
                   <button
                     onClick={() => setShowEditForm(false)}
-                    className="px-3 py-1.5 border border-[#222222] hover:border-white text-neutral-500 hover:text-white bg-black font-mono text-xs transition-all"
+                    className="px-3.5 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-400 hover:text-white bg-slate-900 font-mono text-xs transition-all"
                   >
-                    [CANCEL]
+                    Cancel
                   </button>
                 </div>
               </div>

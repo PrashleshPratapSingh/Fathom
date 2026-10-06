@@ -13,7 +13,9 @@ from sqlalchemy import text
 from app.config import get_settings
 from app.database import Base, engine
 from app.routers.evaluations import router as eval_router
+from app.routers.graph import router as graph_router
 from app.routers.ingest import router as ingest_router
+from app.routers.rewind import router as rewind_router
 
 settings = get_settings()
 
@@ -23,21 +25,24 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler.
 
     On startup:
-    - Enable pgvector extension
+    - Enable pgvector extension (PostgreSQL only)
     - Create all database tables if they don't exist
     """
     async with engine.begin() as conn:
-        # Enable pgvector extension (safe to call multiple times)
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        if not settings.is_sqlite:
+            # Enable pgvector extension (safe to call multiple times)
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         # Create tables
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database tables ready")
+
+    db_type = "SQLite" if settings.is_sqlite else "PostgreSQL"
+    print(f"[OK] Database tables ready ({db_type})")
 
     yield  # App is running
 
     # Shutdown: dispose engine connection pool
     await engine.dispose()
-    print("🛑 Database connections closed")
+    print("[INFO] Database connections closed")
 
 
 # ──────────────────────────────────────────
@@ -63,6 +68,8 @@ app.add_middleware(
 # Include routers
 app.include_router(ingest_router)
 app.include_router(eval_router)
+app.include_router(graph_router)
+app.include_router(rewind_router)
 
 
 @app.get("/", tags=["Health"])

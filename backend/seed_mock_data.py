@@ -35,8 +35,11 @@ def _random_embedding(dim: int = 384) -> list[float]:
 async def seed():
     """Main seeding function."""
     # Ensure tables exist
+    from app.config import get_settings
+    settings = get_settings()
     async with engine.begin() as conn:
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        if not settings.is_sqlite:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session_factory() as db:

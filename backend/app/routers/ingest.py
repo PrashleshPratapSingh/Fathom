@@ -134,14 +134,7 @@ async def _upsert_span(span_data: SpanCreate, db: AsyncSession) -> TraceSpan:
             detail=f"Run {span_data.run_id} not found",
         )
 
-    # Verify parent span exists (if provided)
-    if span_data.parent_span_id:
-        parent = await db.get(TraceSpan, span_data.parent_span_id)
-        if not parent:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Parent span {span_data.parent_span_id} not found",
-            )
+
 
     # Upsert using PostgreSQL INSERT ... ON CONFLICT DO UPDATE
     stmt = pg_insert(TraceSpan).values(
@@ -168,7 +161,7 @@ async def _upsert_span(span_data: SpanCreate, db: AsyncSession) -> TraceSpan:
             "error_message": stmt.excluded.error_message,
             "latency_ms": stmt.excluded.latency_ms,
             "token_count": stmt.excluded.token_count,
-            "metadata_": stmt.excluded.metadata_,
+            "metadata": stmt.excluded.metadata,
         },
     )
 

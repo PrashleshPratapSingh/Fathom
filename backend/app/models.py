@@ -2,12 +2,14 @@
 
 Schema contracts are defined in ARCHITECTURE.md Section 5.
 All team members depend on these models — do NOT modify without team approval.
+
+Supports both PostgreSQL (with pgvector) and SQLite (local dev) backends.
 """
 
+import json
 import uuid
 from datetime import datetime, timezone
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Column,
     DateTime,
@@ -18,11 +20,36 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    JSON,
+    Uuid,
+    event,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
+from app.config import get_settings
 from app.database import Base
+
+_settings = get_settings()
+
+# ──────────────────────────────────────────
+# Portable type helpers
+# ──────────────────────────────────────────
+# On PostgreSQL we use native JSONB and UUID columns.
+# On SQLite we fall back to JSON (stored as TEXT) and String(36).
+
+if _settings.is_sqlite:
+    _JSONType = JSON
+    _UUIDType = Uuid(as_uuid=True)
+    _VectorType = JSON  # store embeddings as JSON-encoded list of floats
+else:
+    from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+    try:
+        from pgvector.sqlalchemy import Vector
+        _VectorType = Vector(384)
+    except ImportError:
+        _VectorType = JSON
+    _JSONType = JSONB
+    _UUIDType = PG_UUID(as_uuid=True)
 
 
 def _utcnow() -> datetime:
@@ -43,12 +70,12 @@ class TraceRun(Base):
 
     __tablename__ = "trace_runs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
+    id = Column(_UUIDType, primary_key=True, default=_new_uuid)
     name = Column(String(255), nullable=False)
     status = Column(String(20), nullable=False, default="running")
     total_tokens = Column(Integer, default=0)
     total_latency_ms = Column(Float, default=0.0)
-    metadata_ = Column("metadata", JSONB, default=dict)
+    metadata_ = Column("metadata", _JSONType, default=dict)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
@@ -68,33 +95,33 @@ class TraceSpan(Base):
 
     __tablename__ = "trace_spans"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
+    id = Column(_UUIDType, primary_key=True, default=_new_uuid)
     run_id = Column(
-        UUID(as_uuid=True),
+        _UUIDType,
         ForeignKey("trace_runs.id", ondelete="CASCADE"),
         nullable=False,
     )
     parent_span_id = Column(
-        UUID(as_uuid=True),
+        _UUIDType,
         ForeignKey("trace_spans.id", ondelete="SET NULL"),
         nullable=True,
     )
     name = Column(String(255), nullable=False)
     kind = Column(String(30), nullable=False)
     status = Column(String(20), nullable=False, default="running")
-    input_data = Column(JSONB, default=dict)
-    output_data = Column(JSONB, default=dict)
+    input_data = Column(_JSONType, default=dict)
+    output_data = Column(_JSONType, default=dict)
     error_message = Column(Text, nullable=True)
     latency_ms = Column(Float, nullable=False)
     token_count = Column(Integer, default=0)
     model_name = Column(String(100), nullable=True)
-    embedding = Column(Vector(384), nullable=True)
-    metadata_ = Column("metadata", JSONB, default=dict)
+    embedding = Column(_VectorType, nullable=True)
+    metadata_ = Column("metadata", _JSONType, default=dict)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
     # For time-travel rewind (Rushikesh will use these)
-    rewind_group_id = Column(UUID(as_uuid=True), nullable=True)
+    rewind_group_id = Column(_UUIDType, nullable=True)
     rewind_depth = Column(Integer, default=0)
 
     # Relationships
@@ -118,16 +145,16 @@ class Evaluation(Base):
 
     __tablename__ = "evaluations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
+    id = Column(_UUIDType, primary_key=True, default=_new_uuid)
     span_id = Column(
-        UUID(as_uuid=True),
+        _UUIDType,
         ForeignKey("trace_spans.id", ondelete="CASCADE"),
         nullable=False,
     )
     phase = Column(String(30), nullable=False)
     verdict = Column(String(20), nullable=False)
     score = Column(Float, nullable=True)
-    details = Column(JSONB, default=dict)
+    details = Column(_JSONType, default=dict)
     summary = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
 
