@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # Groq AI Integration (Ultra-fast inference)
     GROQ_API_KEY: str | None = None
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "qwen/qwen3.8-27b"
 
     @property
     def is_sqlite(self) -> bool:
@@ -36,7 +36,10 @@ class Settings(BaseSettings):
         return self.DATABASE_URL.startswith("sqlite")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
+            ".env",
+        ],
         env_file_encoding="utf-8",
         extra="ignore",
     )

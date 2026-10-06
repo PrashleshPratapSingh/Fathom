@@ -1,4 +1,4 @@
-// Custom Span Node for React Flow with modern glassmorphism, kind icons, and rich telemetry pills
+// Custom Span Node for React Flow — Clean Modern Design (Simple & Dev Mode)
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
@@ -70,6 +70,7 @@ const SpanNode = memo(({ data, selected }: SpanNodeProps) => {
   const worstVerdict = data.worstVerdict;
   const direction = data.direction || 'TB';
   const stepIndex = data.stepIndex || 1;
+  const mode = data.mode || 'non-developer';
   const isCritical = data.isCritical;
   const isDimmed = data.isDimmed;
   const isHighlighted = data.isHighlighted;
@@ -87,14 +88,13 @@ const SpanNode = memo(({ data, selected }: SpanNodeProps) => {
   };
   const KindIcon = kindConfig.icon;
 
-  // Handle placement based on DAG direction
   const targetPosition = direction === 'TB' ? Position.Top : Position.Left;
   const sourcePosition = direction === 'TB' ? Position.Bottom : Position.Right;
 
   return (
     <div
       className={`group relative rounded-xl transition-all duration-200 cursor-pointer select-none text-left
-        ${direction === 'TB' ? 'w-[260px]' : 'w-[270px]'}
+        ${direction === 'TB' ? 'w-[250px]' : 'w-[260px]'}
         ${isDimmed ? 'opacity-25 grayscale-[60%]' : 'opacity-100'}
         ${
           selected
@@ -128,7 +128,7 @@ const SpanNode = memo(({ data, selected }: SpanNodeProps) => {
             <KindIcon className="w-3 h-3" />
             {kindConfig.label}
           </span>
-          {span.model_name && (
+          {mode === 'developer' && span.model_name && (
             <span className="text-[9px] font-mono text-slate-400 bg-slate-800/70 px-1.5 py-0.5 rounded truncate max-w-[85px]">
               {span.model_name.replace('gpt-', '').replace('claude-', '')}
             </span>
@@ -137,22 +137,25 @@ const SpanNode = memo(({ data, selected }: SpanNodeProps) => {
 
         {/* Status indicator */}
         <div className="flex items-center gap-1 shrink-0">
-          {isCritical && (
+          {isCritical && mode === 'developer' && (
             <span title="Critical Path (Latency Bottleneck)" className="text-amber-400 animate-pulse">
               <Flame className="w-3.5 h-3.5 fill-amber-400/20" />
             </span>
           )}
           {isFailed ? (
-            <span className="flex items-center gap-1 text-[10px] text-rose-400 font-mono">
-              <XCircle className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1 text-[10px] text-rose-400 font-mono font-medium">
+              <XCircle className="w-3.5 h-3.5 text-rose-400" />
+              <span>Failed</span>
             </span>
           ) : isRewound ? (
             <span className="flex items-center gap-1 text-[10px] text-purple-400 font-mono">
               <RotateCcw className="w-3.5 h-3.5" />
+              <span>Rewound</span>
             </span>
           ) : isWarning ? (
             <span className="flex items-center gap-1 text-[10px] text-amber-400 font-mono">
               <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Warning</span>
             </span>
           ) : (
             <span className="flex items-center text-emerald-400">
@@ -167,28 +170,38 @@ const SpanNode = memo(({ data, selected }: SpanNodeProps) => {
         {span.name}
       </div>
 
-      {/* Metrics Footer */}
-      <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1.5 border-t border-slate-800/60">
-        <div className="flex items-center gap-1 text-slate-300">
-          <Clock className="w-3 h-3 text-slate-500" />
-          <span className={span.latency_ms > 2000 ? 'text-amber-400 font-semibold' : ''}>
-            {span.latency_ms < 1000 ? `${span.latency_ms.toFixed(0)}ms` : `${(span.latency_ms / 1000).toFixed(2)}s`}
-          </span>
+      {/* Metrics Footer — Simplified for Simple Mode, Detailed for Dev Mode */}
+      {mode === 'developer' ? (
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1.5 border-t border-slate-800/60">
+          <div className="flex items-center gap-1 text-slate-300">
+            <Clock className="w-3 h-3 text-slate-500" />
+            <span className={span.latency_ms > 2000 ? 'text-amber-400 font-semibold' : ''}>
+              {span.latency_ms < 1000 ? `${span.latency_ms.toFixed(0)}ms` : `${(span.latency_ms / 1000).toFixed(2)}s`}
+            </span>
+          </div>
+
+          {span.token_count > 0 && (
+            <div className="flex items-center gap-1">
+              <span className="text-slate-400">{span.token_count.toLocaleString()} tok</span>
+            </div>
+          )}
+
+          {data.cost > 0 && (
+            <div className="flex items-center gap-0.5 text-emerald-400/90" title="Estimated API cost">
+              <Coins className="w-2.5 h-2.5" />
+              <span>{formatCost(data.cost)}</span>
+            </div>
+          )}
         </div>
-
-        {span.token_count > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-slate-400">{span.token_count.toLocaleString()} tok</span>
-          </div>
-        )}
-
-        {data.cost > 0 && (
-          <div className="flex items-center gap-0.5 text-emerald-400/90" title="Estimated API cost">
-            <Coins className="w-2.5 h-2.5" />
-            <span>{formatCost(data.cost)}</span>
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800/60">
+          {isFailed ? (
+            <span className="text-rose-400 font-medium">Action needed: Solve with AI</span>
+          ) : (
+            <span className="text-slate-400">Step completed</span>
+          )}
+        </div>
+      )}
 
       <Handle
         type="source"

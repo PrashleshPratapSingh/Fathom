@@ -1,6 +1,7 @@
 // Fathom — Main Application
 
 import { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, Layers } from 'lucide-react';
 import type { RunResponse, DagResponse, SpanResponse, ViewMode } from './types/api';
 import { fetchRuns, fetchDag, rewindSpan } from './api/client';
 import HeaderBar from './components/HeaderBar';
@@ -12,10 +13,11 @@ export default function App() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [dag, setDag] = useState<DagResponse | null>(null);
   const [selectedSpan, setSelectedSpan] = useState<SpanResponse | null>(null);
-  const [mode, setMode] = useState<ViewMode>('developer');
+  const [mode, setMode] = useState<ViewMode>('non-developer'); // Default to clean Simple Mode!
   const [loading, setLoading] = useState(false);
   const [rewinding, setRewinding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRuns()
@@ -32,8 +34,14 @@ export default function App() {
     setSelectedSpan(null);
     setError(null);
     fetchDag(selectedRunId)
-      .then((data) => { setDag(data); setLoading(false); })
-      .catch((err) => { setError(err.message); setLoading(false); });
+      .then((data) => {
+        setDag(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, [selectedRunId]);
 
   const handleSelectRun = useCallback((runId: string) => setSelectedRunId(runId), []);
@@ -46,13 +54,18 @@ export default function App() {
       if (!selectedRunId) return;
       setRewinding(true);
       try {
-        const result = await rewindSpan(selectedRunId, { span_id: spanId, mutated_input: mutatedInput, re_execute: true });
-        alert(`✅ ${result.message}`);
+        const result = await rewindSpan(selectedRunId, {
+          span_id: spanId,
+          mutated_input: mutatedInput,
+          re_execute: true,
+        });
+        setToastMessage(result.message || 'Rewind executed successfully.');
+        setTimeout(() => setToastMessage(null), 4000);
         const updatedDag = await fetchDag(selectedRunId);
         setDag(updatedDag);
         setSelectedSpan(null);
       } catch (err: any) {
-        alert(`❌ Rewind failed: ${err.message}`);
+        setError(`Rewind failed: ${err.message}`);
       } finally {
         setRewinding(false);
       }
@@ -72,9 +85,20 @@ export default function App() {
         spans={dag?.spans || []}
       />
 
+      {/* Global Notifications */}
+      {toastMessage && (
+        <div className="bg-emerald-950/80 border-b border-emerald-800/60 px-5 py-2 text-xs font-mono text-emerald-300 flex items-center justify-between">
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-400 hover:text-white">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {error && (
-        <div className="bg-red-500/5 border-b border-red-500/10 px-5 py-1.5 text-[11px] text-red-400/80">
-          ⚠️ {error}
+        <div className="bg-rose-950/80 border-b border-rose-800/60 px-5 py-2 text-xs font-mono text-rose-300 flex items-center gap-2">
+          <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -90,13 +114,13 @@ export default function App() {
           <div className="flex-1 flex items-center justify-center">
             {loading ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-6 h-6 border-2 border-fathom-accent border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-white/30">Loading trace...</span>
+                <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-mono text-slate-400">Loading trace...</span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="text-3xl opacity-20">🔍</span>
-                <span className="text-xs text-white/20">Select a trace run</span>
+                <Layers className="w-8 h-8 text-slate-700" />
+                <span className="text-xs font-mono text-slate-500">Select a trace run</span>
               </div>
             )}
           </div>

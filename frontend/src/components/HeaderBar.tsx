@@ -1,6 +1,6 @@
-// Header bar — Modern dark observability navigation and live metrics summary
+// Header bar — Modern clean navigation & telemetry summary (Zero Emojis)
 
-import { Activity, Clock, Cpu, Coins, CheckCircle, AlertTriangle, Layers, Terminal } from 'lucide-react';
+import { Activity, Clock, Cpu, Coins, CheckCircle, AlertTriangle, Layers, Terminal, Sparkles } from 'lucide-react';
 import type { RunResponse, ViewMode, SpanResponse } from '../types/api';
 import { estimateCost, formatCost } from '../utils/costEstimator';
 
@@ -48,8 +48,8 @@ export default function HeaderBar({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold tracking-wider text-white font-mono">FATHOM</span>
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono uppercase bg-violet-950/80 text-violet-300 border border-violet-800/60">
-                Trace DAG
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono uppercase bg-slate-900 text-slate-400 border border-slate-800">
+                Trace Explorer
               </span>
             </div>
           </div>
@@ -64,11 +64,11 @@ export default function HeaderBar({
               className="bg-slate-900 border border-slate-700/80 hover:border-slate-600 text-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono min-w-[320px] focus:outline-none focus:border-violet-500 transition-all shadow-inner"
             >
               <option value="" disabled className="bg-slate-900 text-slate-500">
-                Select a trace run...
+                Select an agent trace...
               </option>
               {runs.map((run) => (
                 <option key={run.id} value={run.id} className="bg-slate-900 text-slate-200">
-                  {run.name} • {run.span_count} spans • {run.total_tokens.toLocaleString()} tok
+                  {run.name} ({run.span_count} steps)
                 </option>
               ))}
             </select>
@@ -79,29 +79,38 @@ export default function HeaderBar({
           )}
         </div>
 
-        {/* Developer Mode Switch */}
+        {/* Simple Mode vs Dev Mode Switch */}
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleMode}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
               mode === 'developer'
                 ? 'bg-violet-950/60 border-violet-700 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.2)]'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
             }`}
           >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>{mode === 'developer' ? 'Dev Mode' : 'Simple Mode'}</span>
+            {mode === 'developer' ? (
+              <>
+                <Terminal className="w-3.5 h-3.5 text-violet-400" />
+                <span>Dev Mode (Advanced)</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-slate-400" />
+                <span>Simple Mode (Clean)</span>
+              </>
+            )}
           </button>
         </div>
       </header>
 
-      {/* Real-time Telemetry Banner */}
+      {/* Telemetry Summary Bar */}
       {totalSteps > 0 && (
         <div className="flex items-center justify-between px-5 py-1.5 bg-slate-900/60 border-t border-slate-800/50 text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-slate-500" />
-              <span>Spans:</span>
+              <span>Total Steps:</span>
               <span className="text-slate-100 font-semibold">{totalSteps}</span>
             </div>
 
@@ -119,36 +128,46 @@ export default function HeaderBar({
               </div>
             )}
 
-            <div className="h-3 w-px bg-slate-800" />
+            {mode === 'developer' && (
+              <>
+                <div className="h-3 w-px bg-slate-800" />
 
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span>Latency:</span>
-              <span className="text-slate-200 font-semibold">
-                {totalLatency < 1000 ? `${totalLatency.toFixed(0)}ms` : `${(totalLatency / 1000).toFixed(2)}s`}
-              </span>
-            </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Latency:</span>
+                  <span className="text-slate-200 font-semibold">
+                    {totalLatency < 1000 ? `${totalLatency.toFixed(0)}ms` : `${(totalLatency / 1000).toFixed(2)}s`}
+                  </span>
+                </div>
 
-            {totalTokens > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-slate-500" />
-                <span>Tokens:</span>
-                <span className="text-slate-200 font-semibold">{totalTokens.toLocaleString()}</span>
-              </div>
-            )}
+                {totalTokens > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Tokens:</span>
+                    <span className="text-slate-200 font-semibold">{totalTokens.toLocaleString()}</span>
+                  </div>
+                )}
 
-            {totalCost > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Est. Cost:</span>
-                <span className="text-emerald-400 font-semibold">{formatCost(totalCost)}</span>
-              </div>
+                {totalCost > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Cost:</span>
+                    <span className="text-emerald-400 font-semibold">{formatCost(totalCost)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          {selectedRun && (
+          {failCount > 0 && mode === 'non-developer' && (
+            <div className="text-[11px] text-amber-400">
+              Click the red failed step to diagnose & solve with AI
+            </div>
+          )}
+
+          {mode === 'developer' && selectedRun && (
             <div className="text-[10px] text-slate-500 truncate max-w-xs">
-              ID: <span className="font-mono">{selectedRun.id.slice(0, 12)}...</span>
+              Run ID: <span className="font-mono">{selectedRun.id.slice(0, 12)}...</span>
             </div>
           )}
         </div>
