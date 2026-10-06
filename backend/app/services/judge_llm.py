@@ -129,11 +129,18 @@ async def evaluate_with_llm(
     inp = input_data or {}
     out = output_data or {}
 
-    judge_model = settings.JUDGE_LLM_MODEL or "gpt-4o-mini"
-    api_key = settings.JUDGE_LLM_API_KEY
+    judge_model = settings.JUDGE_LLM_MODEL or "llama-3.3-70b-versatile"
+    api_key = settings.JUDGE_LLM_API_KEY or settings.GROQ_API_KEY
+    if api_key and (api_key == "your_groq_api_key_here" or not api_key.strip()):
+        api_key = None
 
-    # If OpenAI API Key is provided, call external LLM
-    if api_key and api_key.strip():
+    # Determine base URL (if using Groq, point to Groq's OpenAI-compatible endpoint)
+    base_url = settings.OPENAI_BASE_URL
+    if not base_url and api_key and api_key.startswith("gsk_"):
+        base_url = "https://api.groq.com/openai/v1"
+
+    # If API Key is provided, call external LLM (OpenAI or Groq)
+    if api_key:
         system_prompt = (
             "You are an impartial AI evaluation judge. Your job is to inspect an AI agent step "
             "and decide if it succeeded, had warnings, or failed. "
@@ -157,7 +164,7 @@ async def evaluate_with_llm(
             "phase2_semantic_drift": phase2_eval.model_dump() if phase2_eval else None,
         }
 
-        url = f"{settings.OPENAI_BASE_URL.rstrip('/') if settings.OPENAI_BASE_URL else 'https://api.openai.com/v1'}/chat/completions"
+        url = f"{base_url.rstrip('/') if base_url else 'https://api.openai.com/v1'}/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

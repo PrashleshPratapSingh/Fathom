@@ -1,6 +1,6 @@
 // API client for Fathom backend
 
-import type { DagResponse, RewindRequest, RewindResponse, RunResponse } from '../types/api';
+import type { DagResponse, RewindRequest, RewindResponse, RunResponse, DiagnosisResponse } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -31,5 +31,15 @@ export async function rewindSpan(
   return fetchJSON<RewindResponse>(`${API_BASE}/runs/${runId}/rewind`, {
     method: 'POST',
     body: JSON.stringify(request),
+  });
+}
+
+export async function diagnoseSpan(
+  runId: string,
+  spanId: string,
+): Promise<DiagnosisResponse> {
+  return fetchJSON<DiagnosisResponse>(`${API_BASE}/copilot/diagnose`, {
+    method: 'POST',
+    body: JSON.stringify({ run_id: runId, span_id: spanId }),
   });
 }

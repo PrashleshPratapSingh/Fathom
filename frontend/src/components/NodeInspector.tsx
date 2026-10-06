@@ -1,6 +1,6 @@
-// Node Inspector — Modern telemetry inspection drawer with evaluation breakdowns and rewind controls
+// Node Inspector — Modern telemetry inspection drawer with Groq-powered AI Copilot & Rewind controls
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   Copy,
@@ -15,11 +15,15 @@ import {
   Coins,
   ShieldCheck,
   AlertTriangle,
+  Bot,
+  Zap,
+  ChevronRight,
   Flame,
 } from 'lucide-react';
-import type { SpanResponse, ViewMode, EvaluationResponse } from '../types/api';
+import type { SpanResponse, ViewMode, EvaluationResponse, DiagnosisResponse } from '../types/api';
 import { KIND_LABELS } from '../types/api';
 import { estimateCost, formatCost } from '../utils/costEstimator';
+import { diagnoseSpan } from '../api/client';
 
 interface NodeInspectorProps {
   span: SpanResponse | null;
@@ -104,6 +108,17 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
   const [editInput, setEditInput] = useState('');
   const [showEditForm, setShowEditForm] = useState(false);
 
+  // Groq AI Diagnosis state
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<DiagnosisResponse | null>(null);
+  const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDiagnosis(null);
+    setDiagnosisError(null);
+    setShowEditForm(false);
+  }, [span?.id]);
+
   if (!span) return null;
 
   const kindLabel = KIND_LABELS[span.kind] || span.kind;
@@ -126,6 +141,25 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
     setShowEditForm(true);
   };
 
+  const handleDiagnose = async () => {
+    setDiagnosing(true);
+    setDiagnosisError(null);
+    try {
+      const result = await diagnoseSpan(span.run_id, span.id);
+      setDiagnosis(result);
+    } catch (err: any) {
+      setDiagnosisError(err.message || 'Diagnosis request failed.');
+    } finally {
+      setDiagnosing(false);
+    }
+  };
+
+  const handleApplyAIFix = () => {
+    if (!diagnosis?.repaired_input) return;
+    setEditInput(JSON.stringify(diagnosis.repaired_input, null, 2));
+    setShowEditForm(true);
+  };
+
   const KindIcon =
     span.kind === 'llm_call'
       ? Sparkles
@@ -138,7 +172,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
       : Cpu;
 
   return (
-    <div className="w-[420px] bg-slate-950/95 backdrop-blur-xl border-l border-slate-800/90 flex flex-col h-full overflow-hidden shrink-0 z-30 shadow-2xl animate-fade">
+    <div className="w-[430px] bg-slate-950/95 backdrop-blur-xl border-l border-slate-800/90 flex flex-col h-full overflow-hidden shrink-0 z-30 shadow-2xl animate-fade">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/50">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -175,7 +209,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {/* Telemetry Stats Grid */}
         <div className="grid grid-cols-4 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
           <div className="text-center">
@@ -209,6 +243,86 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
           </div>
         </div>
 
+        {/* AI Copilot Diagnosis Trigger / Card */}
+        <div className="p-3.5 rounded-xl bg-gradient-to-b from-violet-950/30 to-slate-900/50 border border-violet-800/40 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-violet-400" />
+              <span className="text-xs font-mono font-bold text-violet-200">Fathom AI Copilot</span>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-violet-950/80 text-violet-300 border border-violet-800/60">
+                Groq
+              </span>
+            </div>
+            <button
+              onClick={handleDiagnose}
+              disabled={diagnosing}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-mono text-[11px] font-semibold transition-all shadow-md shadow-violet-600/20"
+            >
+              {diagnosing ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3 text-amber-300" />
+                  <span>Diagnose Root Cause</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {diagnosisError && (
+            <div className="p-2 rounded bg-rose-950/40 border border-rose-800/60 text-[11px] font-mono text-rose-300">
+              ⚠️ {diagnosisError}
+            </div>
+          )}
+
+          {diagnosis && (
+            <div className="space-y-2.5 pt-1 text-xs font-mono animate-fade">
+              <div className="text-[10px] text-slate-400 flex items-center justify-between border-b border-violet-900/40 pb-1">
+                <span>Model: {diagnosis.model_used}</span>
+                <span className="text-emerald-400 font-semibold">Diagnosis Ready</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase text-violet-400 font-semibold block mb-0.5">
+                  Headline:
+                </span>
+                <p className="text-slate-200 font-sans text-xs leading-relaxed">{diagnosis.summary}</p>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase text-amber-400 font-semibold block mb-0.5">
+                  Root Cause:
+                </span>
+                <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/80 p-2 rounded border border-slate-800">
+                  {diagnosis.root_cause}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase text-emerald-400 font-semibold block mb-0.5">
+                  Actionable Fix:
+                </span>
+                <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/80 p-2 rounded border border-slate-800">
+                  {diagnosis.suggested_fix}
+                </p>
+              </div>
+
+              {canRewind && (
+                <button
+                  onClick={handleApplyAIFix}
+                  className="w-full py-1.5 px-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>⚡ Auto-Populate Repaired Input in Rewind</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Error message callout */}
         {span.error_message && (
           <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800/60 text-rose-200">
@@ -219,7 +333,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
               </div>
               <CopyButton text={span.error_message} />
             </div>
-            <pre className="text-[11px] font-mono text-rose-200/90 whitespace-pre-wrap bg-rose-950/60 p-2.5 rounded-lg border border-rose-900/60 max-h-36 overflow-y-auto">
+            <pre className="text-[11px] font-mono text-rose-200/90 whitespace-pre-wrap bg-rose-950/60 p-2.5 rounded-lg border border-rose-900/60 max-h-32 overflow-y-auto">
               {span.error_message}
             </pre>
           </div>
@@ -233,7 +347,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
             </span>
             <CopyButton text={JSON.stringify(span.input_data, null, 2)} />
           </div>
-          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-44 overflow-y-auto">
+          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-40 overflow-y-auto">
             {JSON.stringify(span.input_data, null, 2)}
           </pre>
         </div>
@@ -246,7 +360,7 @@ export default function NodeInspector({ span, mode, onClose, onRewind, rewinding
             </span>
             <CopyButton text={JSON.stringify(span.output_data, null, 2)} />
           </div>
-          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-48 overflow-y-auto">
+          <pre className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 p-3 rounded-xl overflow-x-auto max-h-40 overflow-y-auto">
             {Object.keys(span.output_data).length > 0
               ? JSON.stringify(span.output_data, null, 2)
               : '(No output returned)'}

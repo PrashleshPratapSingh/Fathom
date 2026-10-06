@@ -68,6 +68,16 @@ export interface RewindResponse {
   message: string;
 }
 
+export interface DiagnosisResponse {
+  status: string;
+  model_used: string;
+  summary: string;
+  root_cause: string;
+  suggested_fix: string;
+  repaired_input: Record<string, unknown>;
+  groq_error?: string | null;
+}
+
 // UI-specific types
 export type ViewMode = 'developer' | 'non-developer';
 

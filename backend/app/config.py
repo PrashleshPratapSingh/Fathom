@@ -19,12 +19,16 @@ class Settings(BaseSettings):
     # CORS origins allowed (frontend dev server)
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
-    # Evaluation Engine configuration (Abhishek)
+    # Evaluation Engine & AI Copilot configuration
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
     DRIFT_THRESHOLD: float = 0.70
     JUDGE_LLM_API_KEY: str | None = None
-    JUDGE_LLM_MODEL: str = "gpt-4o-mini"
+    JUDGE_LLM_MODEL: str = "llama-3.3-70b-versatile"
     OPENAI_BASE_URL: str | None = None
+
+    # Groq AI Integration (Ultra-fast inference)
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     @property
     def is_sqlite(self) -> bool:

@@ -16,6 +16,7 @@ from app.routers.evaluations import router as eval_router
 from app.routers.graph import router as graph_router
 from app.routers.ingest import router as ingest_router
 from app.routers.rewind import router as rewind_router
+from app.routers.copilot import router as copilot_router
 
 settings = get_settings()
 
@@ -70,6 +71,7 @@ app.include_router(ingest_router)
 app.include_router(eval_router)
 app.include_router(graph_router)
 app.include_router(rewind_router)
+app.include_router(copilot_router)
 
 
 @app.get("/", tags=["Health"])
