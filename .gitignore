@@ -10,10 +10,19 @@ build/
 venv/
 env/
 .pytest_cache/
+**/__pycache__/
+**/.pytest_cache/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
 
 # Environment
 .env
-!.env.example
+backend/.env
+!*.env.example
 
 # IDE
 .vscode/
@@ -30,6 +39,8 @@ fathom_pgdata/
 
 # Node (frontend)
 node_modules/
+**/node_modules/
 frontend/dist/
 frontend/build/
 .next/
+*.tsbuildinfo
