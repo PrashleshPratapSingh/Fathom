@@ -5,6 +5,9 @@ from functools import lru_cache
 import os
 
 
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_default_sqlite_path = os.path.join(_backend_dir, "fathom_dev.db").replace("\\", "/")
+
 class Settings(BaseSettings):
     """Fathom backend configuration.
 
@@ -13,7 +16,7 @@ class Settings(BaseSettings):
     Set DATABASE_URL to a PostgreSQL DSN for production.
     """
 
-    DATABASE_URL: str = "sqlite+aiosqlite:///./fathom_dev.db"
+    DATABASE_URL: str = f"sqlite+aiosqlite:///{_default_sqlite_path}"
     FATHOM_ENDPOINT: str = "http://localhost:8000/api/v1"
 
     # CORS origins allowed (frontend dev server)

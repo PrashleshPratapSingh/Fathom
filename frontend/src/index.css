@@ -10,8 +10,8 @@
 
 body {
   font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #090b10;
-  color: #f1f5f9;
+  background: #000000;
+  color: #fafafa;
   overflow: hidden;
   height: 100vh;
   letter-spacing: -0.01em;
@@ -21,31 +21,31 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #090b10;
+  background: #000000;
 }
 
-/* ─── React Flow overrides ─── */
+/* ─── React Flow overrides (Monochrome High Aesthetic) ─── */
 .react-flow__background {
-  background: #090b10 !important;
+  background: #000000 !important;
 }
 
 .react-flow__controls {
-  background: rgba(15, 23, 42, 0.85) !important;
-  backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(51, 65, 85, 0.7) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  background: rgba(10, 10, 12, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8) !important;
   padding: 4px !important;
 }
 
 .react-flow__controls button {
   background: transparent !important;
   border: none !important;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
-  color: #94a3b8 !important;
-  border-radius: 6px !important;
-  width: 26px !important;
-  height: 26px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #a1a1aa !important;
+  border-radius: 4px !important;
+  width: 24px !important;
+  height: 24px !important;
   transition: all 0.15s ease !important;
 }
 
@@ -54,7 +54,7 @@ body {
 }
 
 .react-flow__controls button:hover {
-  background: rgba(139, 92, 246, 0.2) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
 
@@ -63,21 +63,26 @@ body {
 }
 
 .react-flow__minimap {
-  background: rgba(15, 23, 42, 0.85) !important;
-  backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(51, 65, 85, 0.7) !important;
-  border-radius: 12px !important;
+  background: rgba(10, 10, 12, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
   overflow: hidden !important;
 }
 
 .react-flow__edge path {
+  stroke: #3f3f46 !important;
   transition: stroke 0.2s, stroke-width 0.2s !important;
 }
 
-/* ─── Custom scrollbars ─── */
+.react-flow__edge.selected path {
+  stroke: #ffffff !important;
+}
+
+/* ─── Custom scrollbars (Minimalist) ─── */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -85,19 +90,19 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #27272a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #52525b;
 }
 
 /* ─── Animations ─── */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -105,6 +110,6 @@ body {
   }
 }
 
-.animate-fade {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-fade-in {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

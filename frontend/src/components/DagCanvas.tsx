@@ -1,4 +1,4 @@
-// Advanced React Flow Canvas for Fathom LLM Traces
+// Advanced React Flow Canvas for Fathom LLM Traces — High-Aesthetic Monochrome (Black & White)
 // Clean Minimal Toolbar — Zero Emojis, Zero Clutter
 
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
@@ -118,9 +118,9 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
   };
 
   return (
-    <div className="flex-1 h-full relative overflow-hidden bg-[#090b10]">
-      {/* Floating Canvas Top Toolbar (Clean, No Emojis, No Clutter) */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-slate-950/90 border border-slate-800 p-1.5 rounded-lg shadow-lg">
+    <div className="flex-1 h-full relative overflow-hidden bg-black">
+      {/* Floating Canvas Top Toolbar (Monochrome Aesthetic) */}
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-zinc-950 border border-zinc-800 p-1.5 rounded-lg shadow-xl">
         {/* Search Input */}
         <div className="relative flex items-center">
           <input
@@ -128,24 +128,24 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
             placeholder="Search spans..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-48 bg-slate-900 border border-slate-800 rounded px-2.5 py-1 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+            className="w-48 bg-black border border-zinc-800 rounded px-2.5 py-1 text-xs font-mono text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-white transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 text-slate-500 hover:text-slate-300"
+              className="absolute right-2 text-zinc-500 hover:text-white"
             >
               <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
-        <div className="h-4 w-px bg-slate-800 mx-0.5" />
+        <div className="h-4 w-px bg-zinc-800 mx-0.5" />
 
         {/* Direction Switcher */}
         <button
           onClick={toggleDirection}
-          className="px-2.5 py-1 text-xs font-mono rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition-all"
+          className="px-2.5 py-1 text-xs font-mono rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all"
         >
           Layout: {direction === 'TB' ? 'Vertical' : 'Horizontal'}
         </button>
@@ -156,8 +156,8 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
             onClick={() => setShowCriticalPath((prev) => !prev)}
             className={`px-2.5 py-1 text-xs font-mono rounded border transition-all ${
               showCriticalPath
-                ? 'bg-amber-950/60 border-amber-600 text-amber-300'
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                ? 'bg-white text-black font-semibold border-white'
+                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-800'
             }`}
           >
             Bottlenecks
@@ -169,21 +169,21 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
           onClick={replayStep === null ? handleStartReplay : handleStopReplay}
           className={`px-2.5 py-1 text-xs font-mono rounded border transition-all ${
             replayStep !== null
-              ? 'bg-violet-950/60 border-violet-500 text-violet-300'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+              ? 'bg-white text-black font-semibold border-white'
+              : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-800'
           }`}
         >
           {replayStep !== null ? 'Exit Replay' : 'Replay Trace'}
         </button>
       </div>
 
-      {/* Floating Replay Scrubber Bar at Bottom */}
+      {/* Floating Replay Scrubber Bar at Bottom (Monochrome) */}
       {replayStep !== null && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-slate-950/95 border border-slate-800 px-4 py-2 rounded-xl shadow-xl animate-fade">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-zinc-950 border border-zinc-800 px-4 py-2 rounded-xl shadow-2xl animate-fade-in">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setReplayStep(1)}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800"
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900"
               title="Reset"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -191,14 +191,14 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
             <button
               onClick={() => setReplayStep((s) => Math.max(1, (s ?? 1) - 1))}
               disabled={(replayStep ?? 1) <= 1}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 disabled:opacity-30"
               title="Previous"
             >
               <SkipBack className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setIsReplaying((r) => !r)}
-              className="p-1.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white shadow transition-all"
+              className="p-1.5 rounded-full bg-white hover:bg-zinc-200 text-black shadow transition-all"
               title={isReplaying ? 'Pause' : 'Play'}
             >
               {isReplaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
@@ -206,7 +206,7 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
             <button
               onClick={() => setReplayStep((s) => Math.min(totalSteps, (s ?? 1) + 1))}
               disabled={(replayStep ?? 1) >= totalSteps}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 disabled:opacity-30"
               title="Next"
             >
               <SkipForward className="w-3.5 h-3.5" />
@@ -220,9 +220,9 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
               max={totalSteps}
               value={replayStep}
               onChange={(e) => setReplayStep(Number(e.target.value))}
-              className="w-36 h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-violet-500"
+              className="w-36 h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-white"
             />
-            <span className="text-xs text-violet-300 font-semibold min-w-[45px] text-right">
+            <span className="text-xs text-white font-semibold min-w-[45px] text-right">
               {replayStep} / {totalSteps}
             </span>
           </div>
@@ -246,23 +246,23 @@ export default function DagCanvas({ spans, mode, onNodeClick, selectedSpanId }: 
       >
         <Controls
           position="bottom-left"
-          className="!bg-slate-950 !border !border-slate-800 !rounded-lg !p-1"
+          className="!bg-zinc-950 !border !border-zinc-800 !rounded-lg !p-1"
         />
         <MiniMap
           nodeColor={(node) => {
             const data = node.data as any;
             const kind = data?.span?.kind;
-            if (kind === 'llm_call') return '#8b5cf6';
-            if (kind === 'tool_call') return '#06b6d4';
-            if (kind === 'retrieval') return '#10b981';
-            if (kind === 'agent_decision') return '#f59e0b';
-            return '#64748b';
+            if (kind === 'llm_call') return '#ffffff';
+            if (kind === 'tool_call') return '#d4d4d8';
+            if (kind === 'retrieval') return '#a1a1aa';
+            if (kind === 'agent_decision') return '#71717a';
+            return '#52525b';
           }}
-          maskColor="rgba(9, 11, 16, 0.85)"
-          className="!bg-slate-950 !border !border-slate-800 !rounded-lg"
+          maskColor="rgba(0, 0, 0, 0.85)"
+          className="!bg-zinc-950 !border !border-zinc-800 !rounded-lg"
           style={{ width: 130, height: 80 }}
         />
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(148, 163, 184, 0.08)" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255, 255, 255, 0.08)" />
       </ReactFlow>
     </div>
   );
